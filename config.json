@@ -1,0 +1,97 @@
+{
+    "defaultTarget": "local",
+    "defaultProject": "author_quotes",
+    "targets": {
+        "local": {
+            "url": "http://localhost:8082",
+            "secret_key": "SECRET_KEY_LOCALHOST",
+            "projects": [
+                "author_quotes",
+                "cow"
+            ]
+        },
+        "staging": {
+            "url": "http://localhost:8083",
+            "secret_key": "SECRET_KEY_STAGING",
+            "projects": [
+                "quizzes",
+                "cow"
+            ]
+        },
+        "production": {
+            "url": "http://localhost:8084",
+            "secret_key": "SECRET_KEY_PRODUCTION",
+            "projects": [
+                "trivia_bank",
+                "cow"
+            ]
+        }
+    },
+    "projects": {
+        "quizzes": {
+            "name": "Quizzes",
+            "path": "/quizzes",
+            "intents": {
+                "$any": "game.choice.answer",
+                "repeat question": "game.question.repeat",
+                "give me the score": "game.score",
+                "new game": "game.restart",
+                "try again": "game.restart.yes",
+                "no thanks": "game.restart.no",
+                "end game": "game.quit"
+            },
+            "welcome": "game.start",
+            "fallback": "game.choice.answer",
+            "activePrompts": [
+                "repeat question",
+                "give me the score",
+                "try again",
+                "no thanks",
+                "new game",
+                "end game"
+            ]
+        },
+        "cow": {
+            "name": "Cow",
+            "path": "/cow",
+            "intents": {
+                "let me talk to the cow!": "Cow",
+                "moo!": "Cow",
+                "hello cow!": "Cow"
+            },
+            "welcome": "Default Welcome Intent",
+            "fallback": "Default Fallback Intent",
+            "activePrompts": [
+                "Hello cow"
+            ]
+        },
+        "trivia_bank": {
+            "name": "Trivia Bank",
+            "path": "/trivia_bank",
+            "intents": {
+                "start quiz": "Start Quiz",
+                "$any": "Respond",
+                "end quiz": "End Quiz"
+            },
+            "welcome": "Default Welcome Intent",
+            "fallback": "Default Fallback Intent",
+            "activePrompts": [
+                "Start quiz"
+            ]
+        },
+        "author_quotes": {
+            "name": "Author Quotes",
+            "path": "/author_quotes",
+            "intents": {
+                "start quiz": "Start Quotes",
+                "$any": "Respond",
+                "end quiz": "End Quotes"
+            },
+            "welcome": "Default Welcome Intent",
+            "fallback": "Default Fallback Intent",
+            "activePrompts": [
+                "Start quiz"
+            ]
+        }
+    }
+}
