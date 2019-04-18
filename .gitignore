@@ -1,5 +1,5 @@
 keys/*key*
-
+environment-local.sh
 # Logs
 logs
 *.log
