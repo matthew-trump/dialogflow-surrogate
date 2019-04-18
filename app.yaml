@@ -1,0 +1,20 @@
+runtime: nodejs8
+env: standard
+instance_class: F2
+handlers:
+  - url: '.*'
+    script: auto
+env_variables:
+  BUCKET_NAME: ---google-bucket-name---
+  DEFAULT_TARGET: staging
+  ENVIRONMENT: staging
+  GOOGLE_APPLICATION_CREDENTIALS: ./keys/---google-app-credentials---.json
+  SECRET_KEY_PRODUCTION: --webhook--secret-key-production---
+  SECRET_KEY_STAGING: --webhook--secret-key-staging---
+  ADMINUSER_PASSWORD: --admin-user-password--
+automatic_scaling:
+  min_idle_instances: automatic
+  max_idle_instances: automatic
+  min_pending_latency: automatic
+  max_pending_latency: automatic
+ 
