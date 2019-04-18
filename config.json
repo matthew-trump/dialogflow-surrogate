@@ -1,10 +1,10 @@
 {
-    "defaultTarget": "local",
-    "defaultProject": "author_quotes",
+    "defaultTarget": "staging",
+    "defaultProject": "quizzes",
     "targets": {
         "local": {
             "url": "http://localhost:8082",
-            "secret_key": "SECRET_KEY_LOCALHOST",
+            "secretKey": "SECRET_KEY_LOCALHOST",
             "projects": [
                 "author_quotes",
                 "cow"
@@ -12,7 +12,7 @@
         },
         "staging": {
             "url": "http://localhost:8083",
-            "secret_key": "SECRET_KEY_STAGING",
+            "secretKey": "SECRET_KEY_STAGING",
             "projects": [
                 "quizzes",
                 "cow"
@@ -20,7 +20,7 @@
         },
         "production": {
             "url": "http://localhost:8084",
-            "secret_key": "SECRET_KEY_PRODUCTION",
+            "secretKey": "SECRET_KEY_PRODUCTION",
             "projects": [
                 "trivia_bank",
                 "cow"
@@ -30,7 +30,7 @@
     "projects": {
         "quizzes": {
             "name": "Quizzes",
-            "path": "/quizzes",
+            "path": "/quizzes/dialogflow",
             "intents": {
                 "$any": "game.choice.answer",
                 "repeat question": "game.question.repeat",
@@ -53,7 +53,7 @@
         },
         "cow": {
             "name": "Cow",
-            "path": "/cow",
+            "path": "/cow/dialogflow",
             "intents": {
                 "let me talk to the cow!": "Cow",
                 "moo!": "Cow",
@@ -81,7 +81,7 @@
         },
         "author_quotes": {
             "name": "Author Quotes",
-            "path": "/author_quotes",
+            "path": "/author_quotes/dialogflow",
             "intents": {
                 "start quiz": "Start Quotes",
                 "$any": "Respond",
