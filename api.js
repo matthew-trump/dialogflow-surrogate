@@ -50,7 +50,9 @@ router.post('/dialogflow', function (req, res) {
             if (typeof fulfillmentResponse.error !== 'undefined') {
                 res.status(400).json(fulfillmentResponse);
             } else {
+
                 const responseBody = dialogflow.getAssistantResponse(target, projectId, conversationId, fulfillmentResponse, intent)
+
                 res.json({ response: responseBody });
             }
 
