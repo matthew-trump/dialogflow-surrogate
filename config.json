@@ -33,10 +33,30 @@
             "path": "/quizzes/dialogflow",
             "intents": {
                 "$any": "game.choice.answer",
+                "first": [
+                    "game.choice.ordinal",
+                    {
+                        "ordinal": 0
+                    }
+                ],
+                "second": [
+                    "game.choice.ordinal",
+                    {
+                        "ordinal": 1
+                    }
+                ],
+                "third": [
+                    "game.choice.ordinal",
+                    {
+                        "ordinal": 2
+                    }
+                ],
+                "middle": "game.choice.middle",
+                "last": "game.choice.last",
                 "repeat question": "game.question.repeat",
                 "give me the score": "game.score",
                 "new game": "game.restart",
-                "try again": "game.restart.yes",
+                "yes thanks": "game.restart.yes",
                 "no thanks": "game.restart.no",
                 "end game": "game.quit"
             },
@@ -44,7 +64,14 @@
             "fallback": "game.choice.answer",
             "activePrompts": [
                 "$any",
+                "first",
+                "second",
+                "third",
+                "middle",
+                "last",
                 "repeat question",
+                "yes thanks",
+                "no thanks",
                 "give me the score"
             ]
         },
