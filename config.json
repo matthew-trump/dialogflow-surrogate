@@ -43,12 +43,9 @@
             "welcome": "game.start",
             "fallback": "game.choice.answer",
             "activePrompts": [
+                "$any",
                 "repeat question",
-                "give me the score",
-                "try again",
-                "no thanks",
-                "new game",
-                "end game"
+                "give me the score"
             ]
         },
         "cow": {
