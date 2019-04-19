@@ -58,34 +58,39 @@ class dialogflow {
     }
     getIntent(projectId, assistantRequest, noMap) {
         const query = this.getQuery(assistantRequest, false);
-        let displayName;
+        let intent;
         if (DEBUG_INTENT) console.log("INTENT", projectId, query, noMap);
         const intentsMap = config.projects[projectId].intents;
-        if (DEBUG_INTENT) console.log("INTENT", intentsMap)
+        if (DEBUG_INTENT) console.log("INTENT", intentsMap);
+
         if (query.startsWith('$any:')) {
-            displayName = intentsMap['$any'];
+            intent = intentsMap['$any'];
         }
-        if (!displayName) {
+        if (!intent) {
             if (noMap) {
-                displayName = query;
+                intent = query;
             } else {
-                displayName = intentsMap[query.toLowerCase()]
-                if (!displayName) {
+                intent = intentsMap[query.toLowerCase()]
+                if (!intent) {
                     const invocation = INVOCATION + " " + config.projects[projectId].name.toLowerCase();
                     if (query.toLowerCase() === invocation) {
-                        displayName = config.projects[projectId].welcome;
+                        intent = config.projects[projectId].welcome;
                     } else {
-                        displayName = config.projects[projectId].fallback;
+                        intent = config.projects[projectId].fallback;
                     }
                 }
             }
         }
+        const displayName = Array.isArray(intent) ? intent[0] : intent;
+        const params = Array.isArray(intent) ? intent[1] : {};
 
         if (DEBUG_INTENT) console.log("INTENT ->", displayName);
+        if (DEBUG_INTENT) console.log("PARAMS ->", params);
         const name = "projects/" + projectId + "/agent/intents/" + displayName;
         return {
+            name: name,
             displayName: displayName,
-            name: name
+            params: params
         };
     }
     getQuery(assistantRequest, parseAny) {
@@ -151,7 +156,10 @@ class dialogflow {
             responseId: responseId,
             queryResult: {
                 queryText: queryText,
-                intent: intent,
+                intent: {
+                    displayName: intent.displayName,
+                    name: intent.name
+                },
 
                 outputContexts:
                     [
@@ -172,7 +180,7 @@ class dialogflow {
                 intentDetectionConfidence: 1,
                 languageCode: LANGUAGE_CODE,
                 allRequiredParamsPresent: true,
-                parameters: {},
+                parameters: intent.params,
                 fulfillmentMessages:
                     [{ text: { text: [""] } }]
             },
