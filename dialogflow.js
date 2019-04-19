@@ -56,7 +56,8 @@ class dialogflow {
         for (var i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
         return result;
     }
-    getIntent(projectId, query, noMap) {
+    getIntent(projectId, assistantRequest, noMap) {
+        const query = this.getQuery(assistantRequest, false);
         let displayName;
         if (DEBUG_INTENT) console.log("INTENT", projectId, query, noMap);
         const intentsMap = config.projects[projectId].intents;
@@ -87,15 +88,17 @@ class dialogflow {
             name: name
         };
     }
-    getFulfillmentRequest(target, projectId, assistantRequest, options) {
-
-
+    getQuery(assistantRequest, parseAny) {
         let query = assistantRequest.inputs[0].rawInputs[0].query;
-
-        const intent = this.getIntent(projectId, query, options.noMap);
-        if (query.startsWith("$any:")) {
+        if (parseAny && query.startsWith("$any:")) {
             query = query.substring(5).trim();
         }
+        return query;
+    }
+    getFulfillmentRequest(target, projectId, assistantRequest, intent, options) {
+
+        const query = this.getQuery(assistantRequest, true);
+
 
         const conversation = assistantRequest.conversation;
         const conversationId = conversation.conversationId
@@ -200,6 +203,67 @@ class dialogflow {
 
         //console.log("DATA SENT",obj.queryResult.outputContexts[0].parameters.data);
         return obj;
+    }
+
+    getAssistantResponse(target, projectId, conversationId, responseBody, intent) {
+
+        let data = {};
+
+        if (!responseBody || !responseBody.payload || !responseBody.payload.google) {
+
+            return {};
+        }
+
+
+        const userStorage = responseBody.payload.google.userStorage;
+        const responseItem = responseBody.payload.google.richResponse.items[0]
+        const expectUserResponse = responseBody.payload.google.expectUserResponse;
+
+
+        const outputContexts = responseBody.outputContexts.filter(c => {
+            return c.name.endsWith(APP_DATA_CONTEXT);
+        });
+
+        if (outputContexts && outputContexts[0] && outputContexts[0].parameters) {
+            data = outputContexts[0].parameters.data;
+        } else {
+            data = {};
+        }
+        if (DEBUG_DATA) console.log("");
+        if (DEBUG_DATA) console.log("=data received");
+        if (DEBUG_DATA) console.log(JSON.stringify(data));
+
+        this.dataMap[projectId][target][conversationId][APP_DATA_CONTEXT] = data;
+
+
+        return {
+            conversationToken: "['" + APP_DATA_CONTEXT + "']",
+            expectUserResponse: expectUserResponse,
+            expectedInputs: [
+                {
+                    inputPrompt: {
+                        richInitialPrompt: {
+                            items: [responseItem]
+                        }
+                    },
+                    possibleIntents: [
+                        {
+                            intent: "assistant.intent.action.TEXT"
+                        }
+                    ]
+                }
+            ],
+            responseMetadata: {
+                status: {
+                    message: "Success (200)"
+                },
+                queryMatchInfo: {
+                    queryMatched: true,
+                    intent: intent.name.split("/").pop()
+                }
+            },
+            userStorage: userStorage
+        }
     }
 }
 
