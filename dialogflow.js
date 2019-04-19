@@ -219,21 +219,25 @@ class dialogflow {
         const responseItem = responseBody.payload.google.richResponse.items[0]
         const expectUserResponse = responseBody.payload.google.expectUserResponse;
 
+        if (responseBody.outputContexts) {
 
-        const outputContexts = responseBody.outputContexts.filter(c => {
-            return c.name.endsWith(APP_DATA_CONTEXT);
-        });
+            const outputContexts = responseBody.outputContexts.filter(c => {
+                return c.name.endsWith(APP_DATA_CONTEXT);
+            });
+            if (outputContexts && outputContexts[0] && outputContexts[0].parameters) {
+                data = outputContexts[0].parameters.data;
+            } else {
+                data = {};
+            }
 
-        if (outputContexts && outputContexts[0] && outputContexts[0].parameters) {
-            data = outputContexts[0].parameters.data;
-        } else {
-            data = {};
+            if (DEBUG_DATA) console.log("");
+            if (DEBUG_DATA) console.log("=data received");
+            if (DEBUG_DATA) console.log(JSON.stringify(data));
+
+            this.dataMap[projectId][target][conversationId][APP_DATA_CONTEXT] = data;
+
         }
-        if (DEBUG_DATA) console.log("");
-        if (DEBUG_DATA) console.log("=data received");
-        if (DEBUG_DATA) console.log(JSON.stringify(data));
 
-        this.dataMap[projectId][target][conversationId][APP_DATA_CONTEXT] = data;
 
 
         return {
