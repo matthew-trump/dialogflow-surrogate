@@ -34,18 +34,21 @@ router.post('/dialogflow', function (req, res) {
             }
         }
     }
+    const intent = dialogflow.getIntent(projectId, assistantRequest, options.noMap);
+    const fulfillmenRequest = dialogflow.getFulfillmentRequest(target, projectId, assistantRequest, intent, options);
 
-    const fulfillmenRequest = dialogflow.getFulfillmentRequest(target, projectId, assistantRequest, options);
     if (DEBUG_REQUESTS) console.log("");
     if (DEBUG_REQUESTS) console.log("=============");
+    if (DEBUG_REQUESTS) console.log("intent", intent);
     if (DEBUG_REQUESTS) console.log(JSON.stringify(fulfillmenRequest));
 
     httpBackend.post(target, projectId, fulfillmenRequest)
-        .then((response) => {
-            if (DEBUG_REQUESTS) console.log("=response");
-            if (DEBUG_REQUESTS) console.log(JSON.stringify(response));
+        .then((fulfillmentResponse) => {
+            if (DEBUG_REQUESTS) console.log("=fulfillment response");
+            if (DEBUG_REQUESTS) console.log(JSON.stringify(fulfillmentResponse));
 
-            res.json({ message: 'ok', projectId: projectId });
+            const responseBody = dialogflow.getAssistantResponse(target, projectId, conversationId, fulfillmentResponse, intent)
+            res.json({ response: responseBody });
         })
         .catch((err) => {
             res.status(500).json({ error: err });
