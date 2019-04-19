@@ -47,8 +47,13 @@ router.post('/dialogflow', function (req, res) {
             if (DEBUG_REQUESTS) console.log("=fulfillment response");
             if (DEBUG_REQUESTS) console.log(JSON.stringify(fulfillmentResponse));
 
-            const responseBody = dialogflow.getAssistantResponse(target, projectId, conversationId, fulfillmentResponse, intent)
-            res.json({ response: responseBody });
+            if (typeof fulfillmentResponse.error !== 'undefined') {
+                res.status(400).json(fulfillmentResponse);
+            } else {
+                const responseBody = dialogflow.getAssistantResponse(target, projectId, conversationId, fulfillmentResponse, intent)
+                res.json({ response: responseBody });
+            }
+
         })
         .catch((err) => {
             res.status(500).json({ error: err });
