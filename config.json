@@ -58,7 +58,8 @@
                 "new game": "game.restart",
                 "yes thanks": "game.restart.yes",
                 "no thanks": "game.restart.no",
-                "end game": "game.quit"
+                "end game": "game.quit",
+                "cow": "moo"
             },
             "welcome": "game.start",
             "fallback": "game.choice.answer",
@@ -72,7 +73,8 @@
                 "repeat question",
                 "yes thanks",
                 "no thanks",
-                "give me the score"
+                "give me the score",
+                "cow"
             ]
         },
         "cow": {
