@@ -1,5 +1,7 @@
 const APP_DATA_CONTEXT = '_actions_on_google';
 
+const ACTIONS_INTENT_CANCEL = "actions_intent_CANCEL";
+
 const ACTIONS_CAPABILITY_CUSTOM_STAGE = "actions_capability_custom_stage";
 const ACTIONS_CAPABILITY_SCREEN_OUTPUT = "actions_capability_screen_output";
 const ACTIONS_CAPABILITY_AUDIO_OUTPUT = "actions_capability_audio_output";
