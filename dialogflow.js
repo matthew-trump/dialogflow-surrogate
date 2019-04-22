@@ -76,8 +76,6 @@ class dialogflow {
             return defaultContext;
         }
         const currentContexts = JSON.parse(JSON.stringify(this.outputContextMap[projectId][conversationId]));
-        //currentContexts
-        //currentContexts.reverse();
 
         const activeContextNames = currentContexts
             .sort((a, b) => a.lifespanCount < b.lifespanCount ? -1 : (b.lifespanCount > a.lifespanCount) ? 1 : 0)
@@ -85,7 +83,7 @@ class dialogflow {
             .map(context => context.name.split("/").pop())
             .filter(name => name !== APP_DATA_CONTEXT);
 
-        console.log("RANKED ACTIVE CONTEXT NAMES", activeContextNames);
+        //console.log("RANKED ACTIVE CONTEXT NAMES", activeContextNames);
 
         if (activeContextNames.length < 1) {
             return defaultContext;
@@ -95,7 +93,7 @@ class dialogflow {
             const configContext = config.projects[projectId].intents.contexts[name];
             appliedContext = configContext ? Object.assign({}, appliedContext, configContext) : appliedContext;
         })
-        console.log("APPLIED CONTEXT", appliedContext);
+        //console.log("APPLIED CONTEXT", appliedContext);
         return appliedContext;
 
     }
