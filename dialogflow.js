@@ -1,4 +1,7 @@
 const config = require('./config');
+
+const SESSION_QUEUE_SIZE = process.env.SESSION_QUEUE_SIZE || 100;
+
 const DEBUG = process.env.DEBUG;
 const DEBUG_REQUESTS = DEBUG || process.env.DEBUG_REQUESTS;
 const DEBUG_DATA = DEBUG || process.env.DEBUG_DATA;
@@ -8,6 +11,7 @@ const DEBUG_SPEECH = DEBUG || process.env.DEBUG_SPEECH;
 const INVOCATION = "take me to";
 const APP_DATA_CONTEXT = '_actions_on_google';
 
+const ACTIONS_INTENT_CANCEL = "actions_intent_CANCEL";
 const ACTIONS_CAPABILITY_CUSTOM_STAGE = "actions_capability_custom_stage";
 const ACTIONS_CAPABILITY_SCREEN_OUTPUT = "actions_capability_screen_output";
 const ACTIONS_CAPABILITY_AUDIO_OUTPUT = "actions_capability_audio_output";
@@ -17,9 +21,16 @@ const ACTIONS_CAPABILITY_MEDIA_RESPONSE_AUDIO = "actions_capability_media_respon
 
 const LANGUAGE_CODE = "en-us";
 
+const EXIT_COMMANDS = ['quit', 'exit', 'cancel', 'stop', 'nevermind', 'goodbye'];
+
+
+
 class dialogflow {
 
     constructor() {
+        this.sessionQueue = Array(SESSION_QUEUE_SIZE);
+        this.sessionQueueMarker = 0;
+
         this.intentIdMap = {};
         this.dataMap = {}
         Object.keys(config.projects).map(id => {
@@ -29,9 +40,6 @@ class dialogflow {
     }
     initializeDataMap(projectId) {
         this.dataMap[projectId] = {};
-        Object.keys(config.targets).map(targetId => {
-            this.dataMap[projectId][targetId] = {};
-        })
     }
     initializeIntentMapIds(projectId) {
         const map = config.projects[projectId].intents;
@@ -58,12 +66,16 @@ class dialogflow {
     }
     getIntent(projectId, assistantRequest, noMap) {
         const query = this.getQuery(assistantRequest, false);
+
+
         let intent;
         if (DEBUG_INTENT) console.log("INTENT", projectId, query, noMap);
         const intentsMap = config.projects[projectId].intents;
         if (DEBUG_INTENT) console.log("INTENT", intentsMap);
 
-        if (query.startsWith('$any:')) {
+        if (EXIT_COMMANDS.indexOf(query.toLowerCase()) !== -1) {
+            intent = ACTIONS_INTENT_CANCEL;
+        } else if (query.startsWith('$any:')) {
             intent = intentsMap['$any'];
         }
         if (!intent) {
@@ -100,7 +112,7 @@ class dialogflow {
         }
         return query;
     }
-    getFulfillmentRequest(target, projectId, assistantRequest, intent, options) {
+    getFulfillmentRequest(projectId, assistantRequest, intent, options) {
 
         const query = this.getQuery(assistantRequest, true);
 
@@ -109,10 +121,22 @@ class dialogflow {
         const conversationId = conversation.conversationId
         const sessionId = this.getSessionId(projectId, conversationId);
 
-        const dataMap = this.dataMap[projectId][target];
+        const dataMap = this.dataMap[projectId];
 
         if (!dataMap[conversationId]) {
             dataMap[conversationId] = {};
+
+            const marker = this.sessionQueueMarker;
+
+            const deletableConversatonId = this.sessionQueue[marker];
+            if (typeof deletableConversatonId === 'string') {
+
+                delete this.dataMap[projectId][deletableConversatonId];
+            }
+            this.sessionQueue[marker] = conversationId;
+            this.sessionQueueMarker = marker < (this.sessionQueue.length - 1) ?
+                marker + 1 : 0;
+
         }
         const conversationData = dataMap[conversationId];
         let dataString = "";
@@ -213,8 +237,36 @@ class dialogflow {
         return obj;
     }
 
-    getAssistantResponse(target, projectId, conversationId, responseBody, intent) {
+    getAssistantResponse(projectId, conversationId, responseBody, intent) {
 
+        if (intent.displayName === ACTIONS_INTENT_CANCEL) {
+            return {
+                conversationToken: "['" + APP_DATA_CONTEXT + "']",
+                expectedInputs: [
+                    {
+                        inputPrompt: {
+                            richInitialPrompt: {
+                                items: [],
+                            }
+                        },
+                        possibleIntents: [
+                            {
+                                intent: "assistant.intent.action.TEXT"
+                            }
+                        ]
+                    }
+                ],
+                responseMetadata: {
+                    status: {
+                        message: "Success (200)"
+                    },
+                    queryMatchInfo: {
+                        queryMatched: true,
+                        intent: ACTIONS_INTENT_CANCEL
+                    }
+                }
+            }
+        }
         let data = {};
 
         if (!responseBody || !responseBody.payload || !responseBody.payload.google) {
@@ -224,7 +276,8 @@ class dialogflow {
 
 
         const userStorage = responseBody.payload.google.userStorage;
-        const responseItem = responseBody.payload.google.richResponse.items[0]
+        const responseItems = responseBody.payload.google.richResponse.items;
+        const responseSuggestions = responseBody.payload.google.richResponse.suggestions;
         const expectUserResponse = responseBody.payload.google.expectUserResponse;
 
         if (responseBody.outputContexts) {
@@ -242,7 +295,7 @@ class dialogflow {
             if (DEBUG_DATA) console.log("=data received");
             if (DEBUG_DATA) console.log(JSON.stringify(data));
 
-            this.dataMap[projectId][target][conversationId][APP_DATA_CONTEXT] = data;
+            this.dataMap[projectId][conversationId][APP_DATA_CONTEXT] = data;
 
         }
 
@@ -255,7 +308,8 @@ class dialogflow {
                 {
                     inputPrompt: {
                         richInitialPrompt: {
-                            items: [responseItem]
+                            items: responseItems,
+                            suggestions: responseSuggestions
                         }
                     },
                     possibleIntents: [
