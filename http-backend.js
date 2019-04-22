@@ -3,7 +3,7 @@ const https = require('https');
 const config = require("./config");
 
 const DEBUG = process.env.DEBUG;
-const DEBUG_REQUESTS = DEBUG || process.env.DEBUG_REQUESTS;
+const DEBUG_HTTP = DEBUG || process.env.DEBUG_HTTP;
 
 class httpBackend {
 
@@ -14,9 +14,9 @@ class httpBackend {
         const projectConfig = config.projects[projectId];
 
         const backendUrl = targetConfig.url;
-        console.log("targetConfig.secretKey", targetConfig, targetConfig.secretKey)
+
         const secretKey = process.env[targetConfig.secretKey];
-        console.log("secretKey", secretKey)
+
         const path = projectConfig.path;
 
         const url = new URL(backendUrl + path);
@@ -26,7 +26,7 @@ class httpBackend {
         const port = url.port ? url.port : protocol.startsWith('https') ? 443 : 80;
         const client = protocol.startsWith('https') ? https : http;
 
-        if (DEBUG_REQUESTS) console.log("BACKEND URL", url)
+        if (DEBUG_HTTP) console.log("HTTP BACKEND URL", url)
         return {
             client: client,
             request: {
