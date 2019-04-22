@@ -10,9 +10,11 @@ const DEBUG_DATA = DEBUG || process.env.DEBUG_DATA;
 const DEBUG_INTENT = DEBUG || process.env.DEBUG_INTENT;
 const DEBUG_SPEECH = DEBUG || process.env.DEBUG_SPEECH;
 
+const ACTIONS_INTENT_CANCEL = "actions_intent_CANCEL";
 
 router.post('/dialogflow', function (req, res) {
     const target = req.body.target || TARGET;
+    const requestId = req.body.requestId;
     const projectId = req.body.projectId;
     const assistantRequest = req.body.request;
     const extra = req.body.extra;
@@ -21,7 +23,7 @@ router.post('/dialogflow', function (req, res) {
     if (DEBUG_REQUESTS) console.log("");
     if (DEBUG_REQUESTS) console.log("=============");
     if (DEBUG_REQUESTS) console.log(conversationId);
-    if (DEBUG_REQUESTS) console.log("= from Assistant");
+    if (DEBUG_REQUESTS) console.log("=assistant request (received)");
     if (DEBUG_REQUESTS) console.log(JSON.stringify(assistantRequest));
 
     const options = { withData: true, noMap: req.body.noMap };
@@ -35,30 +37,40 @@ router.post('/dialogflow', function (req, res) {
         }
     }
     const intent = dialogflow.getIntent(projectId, assistantRequest, options.noMap);
-    const fulfillmenRequest = dialogflow.getFulfillmentRequest(target, projectId, assistantRequest, intent, options);
+    const fulfillmenRequest = dialogflow.getFulfillmentRequest(projectId, assistantRequest, intent, options);
 
     if (DEBUG_REQUESTS) console.log("");
     if (DEBUG_REQUESTS) console.log("=============");
     if (DEBUG_REQUESTS) console.log("intent", intent);
+    if (DEBUG_REQUESTS) console.log("=fulfillment request (sent)");
     if (DEBUG_REQUESTS) console.log(JSON.stringify(fulfillmenRequest));
 
     httpBackend.post(target, projectId, fulfillmenRequest)
         .then((fulfillmentResponse) => {
-            if (DEBUG_REQUESTS) console.log("=fulfillment response");
+            if (DEBUG_REQUESTS) console.log("=fulfillment response (received)");
             if (DEBUG_REQUESTS) console.log(JSON.stringify(fulfillmentResponse));
 
             if (typeof fulfillmentResponse.error !== 'undefined') {
-                res.status(400).json(fulfillmentResponse);
+                if (ACTIONS_INTENT_CANCEL === intent.displayName) {
+                    const assistantResponse = dialogflow.getAssistantResponse(projectId, conversationId, {}, intent)
+                    console.log("SENDING ACTIONS_INTENT_CANCEL", assistantResponse);
+                    res.status(200).json({ response: assistantResponse });
+                } else {
+                    res.status(400).json(fulfillmentResponse);
+                }
             } else {
 
-                const responseBody = dialogflow.getAssistantResponse(target, projectId, conversationId, fulfillmentResponse, intent)
-
-                res.json({ response: responseBody });
+                const assistantResponse = dialogflow.getAssistantResponse(projectId, conversationId, fulfillmentResponse, intent)
+                if (DEBUG_REQUESTS) console.log("");
+                if (DEBUG_REQUESTS) console.log("=============");
+                if (DEBUG_REQUESTS) console.log("=assistant response (sent)");
+                if (DEBUG_REQUESTS) console.log(JSON.stringify(assistantResponse));
+                res.json({ response: assistantResponse, requestId: requestId });
             }
 
         })
         .catch((err) => {
-            res.status(500).json({ error: err });
+            res.status(500).json({ error: err, requestId: requestId });
         })
 
 
