@@ -1,5 +1,6 @@
 keys/*key*
 environment-local.sh
+test-project-*.json
 # Logs
 logs
 *.log
