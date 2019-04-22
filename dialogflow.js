@@ -32,14 +32,20 @@ class dialogflow {
         this.sessionQueueMarker = 0;
 
         this.intentIdMap = {};
-        this.dataMap = {}
+        this.dataMap = {};
+        this.outputContextMap = {};
+
         Object.keys(config.projects).map(id => {
             this.initializeDataMap(id);
+            this.initializeOutputContextMap(id);
             this.initializeIntentMapIds(id);
         })
     }
     initializeDataMap(projectId) {
         this.dataMap[projectId] = {};
+    }
+    initializeOutputContextMap(projectId) {
+        this.outputContextMap[projectId] = {};
     }
     initializeIntentMapIds(projectId) {
         const map = config.projects[projectId].intents;
@@ -64,13 +70,44 @@ class dialogflow {
         for (var i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
         return result;
     }
-    getIntent(projectId, assistantRequest, noMap) {
+    getAppliedContext(projectId, conversationId) {
+        const defaultContext = config.projects[projectId].intents.contexts.default;
+        if (typeof this.outputContextMap[projectId][conversationId] === 'undefined') {
+            return defaultContext;
+        }
+        const currentContexts = JSON.parse(JSON.stringify(this.outputContextMap[projectId][conversationId]));
+        //currentContexts
+        //currentContexts.reverse();
+
+        const activeContextNames = currentContexts
+            .sort((a, b) => a.lifespanCount < b.lifespanCount ? -1 : (b.lifespanCount > a.lifespanCount) ? 1 : 0)
+            .reverse()
+            .map(context => context.name.split("/").pop())
+            .filter(name => name !== APP_DATA_CONTEXT);
+
+        console.log("RANKED ACTIVE CONTEXT NAMES", activeContextNames);
+
+        if (activeContextNames.length < 1) {
+            return defaultContext;
+        }
+        let appliedContext = Object.assign({}, defaultContext);
+        activeContextNames.map(name => {
+            const configContext = config.projects[projectId].intents.contexts[name];
+            appliedContext = configContext ? Object.assign({}, appliedContext, configContext) : appliedContext;
+        })
+        console.log("APPLIED CONTEXT", appliedContext);
+        return appliedContext;
+
+    }
+    getIntent(projectId, conversationId, assistantRequest, noMap) {
         const query = this.getQuery(assistantRequest, false);
 
 
         let intent;
         if (DEBUG_INTENT) console.log("INTENT", projectId, query, noMap);
-        const intentsMap = config.projects[projectId].intents;
+        //const intentsMap = config.projects[projectId].intents;
+        const intentsMap = this.getAppliedContext(projectId, conversationId);
+
         if (DEBUG_INTENT) console.log("INTENT", intentsMap);
 
         if (EXIT_COMMANDS.indexOf(query.toLowerCase()) !== -1) {
@@ -121,8 +158,52 @@ class dialogflow {
         const conversationId = conversation.conversationId
         const sessionId = this.getSessionId(projectId, conversationId);
 
-        const dataMap = this.dataMap[projectId];
+        //const dataMap = this.dataMap[projectId];
 
+        if (typeof this.outputContextMap[projectId][conversationId] !== 'undefined') {
+            console.log("FOUND OUTPUT CONTEXT MAP", this.outputContextMap[projectId][conversationId]);
+            this.outputContextMap[projectId][conversationId] = this.outputContextMap[projectId][conversationId]
+                .map(context => {
+
+                    const newcontext = context.lifespanCount < 99 ? Object.assign({}, context, { lifespanCount: context.lifespanCount - 1 }) : context;
+                    //console.log("NEW CONTEXT", newcontext);
+                    return newcontext;
+                })
+                .filter(context => {
+                    return context.lifespanCount > 0;
+                });
+            console.log("UPDATED CONTEXT MAP", this.outputContextMap[projectId][conversationId]);
+        } else {
+
+            this.outputContextMap[projectId][conversationId] = [
+                {
+                    name: sessionId + "/contexts/" + APP_DATA_CONTEXT,
+                    lifespanCount: 99,
+                    parameters: {
+                        data: "{}"
+                    }
+                }
+            ];
+            console.log("ORIGINATED CONTEXT MAP", this.outputContextMap[projectId][conversationId]);
+            const marker = this.sessionQueueMarker;
+            const deletableConversatonId = this.sessionQueue[marker];
+            if (typeof deletableConversatonId === 'string') {
+
+                //delete this.dataMap[projectId][deletableConversatonId];
+                delete this.outputContextMap[projectId][deletableConversatonId]
+            }
+            this.sessionQueue[marker] = conversationId;
+            this.sessionQueueMarker = marker < (this.sessionQueue.length - 1) ?
+                marker + 1 : 0;
+        }
+        const outputContexts = this.outputContextMap[projectId][conversationId]
+            .map(context => {
+                return {
+                    name: context.name,
+                    parameters: context.parameters
+                }
+            })
+        /**
         if (!dataMap[conversationId]) {
             dataMap[conversationId] = {};
 
@@ -132,6 +213,7 @@ class dialogflow {
             if (typeof deletableConversatonId === 'string') {
 
                 delete this.dataMap[projectId][deletableConversatonId];
+                delete this.outputContextMap[projectId][deletableConversatonId]
             }
             this.sessionQueue[marker] = conversationId;
             this.sessionQueueMarker = marker < (this.sessionQueue.length - 1) ?
@@ -156,6 +238,7 @@ class dialogflow {
         if (DEBUG_DATA) console.log("");
         if (DEBUG_DATA) console.log("=data sent");
         if (DEBUG_DATA) console.log(dataString);
+         */
 
         const queryText = options.queryText || query;
         const user = assistantRequest.user;
@@ -187,13 +270,15 @@ class dialogflow {
 
                 outputContexts:
                     [
+                        /** 
                         {
                             name: sessionId + "/contexts/" + APP_DATA_CONTEXT,
                             parameters: {
                                 data: dataString
                             }
                         },
-
+                        */
+                        ...outputContexts,
                         { name: sessionId + "/contexts/" + ACTIONS_CAPABILITY_SCREEN_OUTPUT },
                         { name: sessionId + "/contexts/" + ACTIONS_CAPABILITY_AUDIO_OUTPUT },
                         { name: sessionId + "/contexts/" + GOOGLE_ASSISTANT_INPUT_TYPE_KEYBOARD },
@@ -281,7 +366,17 @@ class dialogflow {
         const expectUserResponse = responseBody.payload.google.expectUserResponse;
 
         if (responseBody.outputContexts) {
+            const currentContexts = this.outputContextMap[projectId][conversationId];
+            const newContextNames = responseBody.outputContexts.map(context => context.name);
 
+            this.outputContextMap[projectId][conversationId] =
+                [
+                    ...responseBody.outputContexts,
+                    ...currentContexts.filter(context => {
+                        return newContextNames.indexOf(context.name) === -1;
+                    })]
+            console.log("SET OUTPUT CONTEXT MAP", conversationId, this.outputContextMap[projectId][conversationId]);
+            /**
             const outputContexts = responseBody.outputContexts.filter(c => {
                 return c.name.endsWith(APP_DATA_CONTEXT);
             });
@@ -296,6 +391,9 @@ class dialogflow {
             if (DEBUG_DATA) console.log(JSON.stringify(data));
 
             this.dataMap[projectId][conversationId][APP_DATA_CONTEXT] = data;
+             */
+
+
 
         }
 
