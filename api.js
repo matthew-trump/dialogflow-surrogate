@@ -36,7 +36,7 @@ router.post('/dialogflow', function (req, res) {
             }
         }
     }
-    const intent = dialogflow.getIntent(projectId, assistantRequest, options.noMap);
+    const intent = dialogflow.getIntent(projectId, conversationId, assistantRequest, options.noMap);
     const fulfillmenRequest = dialogflow.getFulfillmentRequest(projectId, assistantRequest, intent, options);
 
     if (DEBUG_REQUESTS) console.log("");
