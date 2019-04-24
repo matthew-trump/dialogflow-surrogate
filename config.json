@@ -62,6 +62,7 @@
                         "goat": "moo"
                     },
                     "restart": {
+                        "$any": "game.restart",
                         "yes thanks": "game.restart.yes",
                         "no thanks": "game.restart.no"
                     },
