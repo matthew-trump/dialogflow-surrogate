@@ -56,10 +56,7 @@
                         "middle": "game.choice.middle",
                         "last": "game.choice.last",
                         "give me the score": "game.score",
-                        "repeat question": "game.question.repeat",
-                        "cow": "moo",
-                        "burro": "moo",
-                        "goat": "moo"
+                        "repeat question": "game.question.repeat"
                     },
                     "restart": {
                         "$any": "game.restart",
@@ -71,9 +68,7 @@
                         "give me the score": "game.score",
                         "new game": "game.restart",
                         "end game": "game.quit",
-                        "cow": "moo",
-                        "llama": "moo",
-                        "goat": "game.score"
+                        "egg": "moo"
                     }
                 }
             },
@@ -90,10 +85,7 @@
                 "yes thanks",
                 "no thanks",
                 "give me the score",
-                "cow",
-                "llama",
-                "burro",
-                "goat"
+                "egg"
             ]
         },
         "cow": {
