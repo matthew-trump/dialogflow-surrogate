@@ -44,7 +44,6 @@ router.post('/', (req, res) => {
             res.status(400).json({ error: "Error checking if file " + path + " exists in bucket " + err });
             return;
         } else if (exists) {
-            console.log("BUCKET FILE EXISTS ", path);
             res.json({ url: url, created: 0 });
             return;
         } else {
@@ -57,8 +56,6 @@ router.post('/', (req, res) => {
                     return;
                 }
                 // Write the binary audio content to a local file
-
-                console.log("SYNTHESIZED SPEECH SUCCESSFULLY");
                 bfile.save(response.audioContent, function (err) {
                     if (!err) {
                         console.log('Audio content written to BUCKET: ' + "." + path);
