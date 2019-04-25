@@ -3,10 +3,7 @@ const config = require('./config');
 const SESSION_QUEUE_SIZE = process.env.SESSION_QUEUE_SIZE || 100;
 
 const DEBUG = process.env.DEBUG;
-const DEBUG_REQUESTS = DEBUG || process.env.DEBUG_REQUESTS;
-const DEBUG_DATA = DEBUG || process.env.DEBUG_DATA;
 const DEBUG_INTENT = DEBUG || process.env.DEBUG_INTENT;
-const DEBUG_SPEECH = DEBUG || process.env.DEBUG_SPEECH;
 
 const INVOCATION = "take me to";
 const APP_DATA_CONTEXT = '_actions_on_google';
@@ -61,8 +58,6 @@ class dialogflow {
     getSessionId(projectId, conversationId) {
         return "projects/" + projectId + "/agent/sessions/" + conversationId;
     }
-
-
     generateIdString() {
         const length = 16;
         const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-';
@@ -83,8 +78,6 @@ class dialogflow {
             .map(context => context.name.split("/").pop())
             .filter(name => name !== APP_DATA_CONTEXT);
 
-        //console.log("RANKED ACTIVE CONTEXT NAMES", activeContextNames);
-
         if (activeContextNames.length < 1) {
             return defaultContext;
         }
@@ -93,7 +86,6 @@ class dialogflow {
             const configContext = config.projects[projectId].intents.contexts[name];
             appliedContext = configContext ? Object.assign({}, appliedContext, configContext) : appliedContext;
         })
-        //console.log("APPLIED CONTEXT", appliedContext);
         return appliedContext;
 
     }
@@ -103,7 +95,6 @@ class dialogflow {
 
         let intent;
         if (DEBUG_INTENT) console.log("INTENT", projectId, query, noMap);
-        //const intentsMap = config.projects[projectId].intents;
         const intentsMap = this.getAppliedContext(projectId, conversationId);
 
         if (DEBUG_INTENT) console.log("INTENT", intentsMap);
@@ -156,21 +147,19 @@ class dialogflow {
         const conversationId = conversation.conversationId
         const sessionId = this.getSessionId(projectId, conversationId);
 
-        //const dataMap = this.dataMap[projectId];
 
         if (typeof this.outputContextMap[projectId][conversationId] !== 'undefined') {
-            console.log("FOUND OUTPUT CONTEXT MAP", this.outputContextMap[projectId][conversationId]);
             this.outputContextMap[projectId][conversationId] = this.outputContextMap[projectId][conversationId]
                 .map(context => {
 
                     const newcontext = context.lifespanCount < 99 ? Object.assign({}, context, { lifespanCount: context.lifespanCount - 1 }) : context;
-                    //console.log("NEW CONTEXT", newcontext);
+
+
                     return newcontext;
                 })
                 .filter(context => {
                     return context.lifespanCount > 0;
                 });
-            console.log("UPDATED CONTEXT MAP", this.outputContextMap[projectId][conversationId]);
         } else {
 
             this.outputContextMap[projectId][conversationId] = [
@@ -182,12 +171,9 @@ class dialogflow {
                     }
                 }
             ];
-            console.log("ORIGINATED CONTEXT MAP", this.outputContextMap[projectId][conversationId]);
             const marker = this.sessionQueueMarker;
             const deletableConversatonId = this.sessionQueue[marker];
             if (typeof deletableConversatonId === 'string') {
-
-                //delete this.dataMap[projectId][deletableConversatonId];
                 delete this.outputContextMap[projectId][deletableConversatonId]
             }
             this.sessionQueue[marker] = conversationId;
@@ -201,42 +187,6 @@ class dialogflow {
                     parameters: context.parameters
                 }
             })
-        /**
-        if (!dataMap[conversationId]) {
-            dataMap[conversationId] = {};
-
-            const marker = this.sessionQueueMarker;
-
-            const deletableConversatonId = this.sessionQueue[marker];
-            if (typeof deletableConversatonId === 'string') {
-
-                delete this.dataMap[projectId][deletableConversatonId];
-                delete this.outputContextMap[projectId][deletableConversatonId]
-            }
-            this.sessionQueue[marker] = conversationId;
-            this.sessionQueueMarker = marker < (this.sessionQueue.length - 1) ?
-                marker + 1 : 0;
-
-        }
-        const conversationData = dataMap[conversationId];
-        let dataString = "";
-        if (options.withData) {
-            dataString = conversationData[APP_DATA_CONTEXT];
-            if (dataString) {
-                let data = JSON.parse(conversationData[APP_DATA_CONTEXT]);
-                dataString = JSON.stringify(data);
-                if (options.data) {
-                    data = Object.assign({}, data, options.data);
-                }
-            } else if (options.data) {
-                let data = options.data;
-                dataString = JSON.stringify(data);
-            }
-        }
-        if (DEBUG_DATA) console.log("");
-        if (DEBUG_DATA) console.log("=data sent");
-        if (DEBUG_DATA) console.log(dataString);
-         */
 
         const queryText = options.queryText || query;
         const user = assistantRequest.user;
@@ -252,10 +202,7 @@ class dialogflow {
 
         const canvas = assistantRequest.surface.capabilities.filter(c => c.name === "actions.capability.CUSTOM_STAGE").length > 0
 
-
         const responseId = this.generateIdString();
-
-
 
         const obj = {
             responseId: responseId,
@@ -268,14 +215,6 @@ class dialogflow {
 
                 outputContexts:
                     [
-                        /** 
-                        {
-                            name: sessionId + "/contexts/" + APP_DATA_CONTEXT,
-                            parameters: {
-                                data: dataString
-                            }
-                        },
-                        */
                         ...outputContexts,
                         { name: sessionId + "/contexts/" + ACTIONS_CAPABILITY_SCREEN_OUTPUT },
                         { name: sessionId + "/contexts/" + ACTIONS_CAPABILITY_AUDIO_OUTPUT },
@@ -312,11 +251,8 @@ class dialogflow {
         };
 
         if (canvas) {
-
             obj.queryResult.outputContexts.push({ name: sessionId + "/contexts/" + ACTIONS_CAPABILITY_CUSTOM_STAGE });
         }
-
-        //console.log("DATA SENT",obj.queryResult.outputContexts[0].parameters.data);
         return obj;
     }
 
@@ -350,7 +286,6 @@ class dialogflow {
                 }
             }
         }
-        let data = {};
 
         if (!responseBody || !responseBody.payload || !responseBody.payload.google) {
 
@@ -373,25 +308,6 @@ class dialogflow {
                     ...currentContexts.filter(context => {
                         return newContextNames.indexOf(context.name) === -1;
                     })]
-            console.log("SET OUTPUT CONTEXT MAP", conversationId, this.outputContextMap[projectId][conversationId]);
-            /**
-            const outputContexts = responseBody.outputContexts.filter(c => {
-                return c.name.endsWith(APP_DATA_CONTEXT);
-            });
-            if (outputContexts && outputContexts[0] && outputContexts[0].parameters) {
-                data = outputContexts[0].parameters.data;
-            } else {
-                data = {};
-            }
-
-            if (DEBUG_DATA) console.log("");
-            if (DEBUG_DATA) console.log("=data received");
-            if (DEBUG_DATA) console.log(JSON.stringify(data));
-
-            this.dataMap[projectId][conversationId][APP_DATA_CONTEXT] = data;
-             */
-
-
 
         }
 
