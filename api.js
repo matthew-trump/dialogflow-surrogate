@@ -6,9 +6,6 @@ const httpBackend = require('./http-backend');
 
 const DEBUG = process.env.DEBUG;
 const DEBUG_REQUESTS = DEBUG || process.env.DEBUG_REQUESTS;
-const DEBUG_DATA = DEBUG || process.env.DEBUG_DATA;
-const DEBUG_INTENT = DEBUG || process.env.DEBUG_INTENT;
-const DEBUG_SPEECH = DEBUG || process.env.DEBUG_SPEECH;
 
 const ACTIONS_INTENT_CANCEL = "actions_intent_CANCEL";
 
@@ -52,8 +49,7 @@ router.post('/dialogflow', function (req, res) {
 
             if (typeof fulfillmentResponse.error !== 'undefined') {
                 if (ACTIONS_INTENT_CANCEL === intent.displayName) {
-                    const assistantResponse = dialogflow.getAssistantResponse(projectId, conversationId, {}, intent)
-                    console.log("SENDING ACTIONS_INTENT_CANCEL", assistantResponse);
+                    const assistantResponse = dialogflow.getAssistantResponse(projectId, conversationId, {}, intent);
                     res.status(200).json({ response: assistantResponse });
                 } else {
                     res.status(400).json(fulfillmentResponse);
