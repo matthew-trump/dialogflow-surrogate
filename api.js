@@ -35,6 +35,8 @@ router.post('/dialogflow', function (req, res) {
     }
     const intent = dialogflow.getIntent(projectId, conversationId, assistantRequest, options.noMap);
     const fulfillmenRequest = dialogflow.getFulfillmentRequest(projectId, assistantRequest, intent, options);
+    const postYml = artilleryScript.getPostYml(fulfillmenRequest);
+    dialogflow.ymlScriptMap[projectId][conversationId].push(postYml);
 
     if (DEBUG_REQUESTS) console.log("");
     if (DEBUG_REQUESTS) console.log("=============");
