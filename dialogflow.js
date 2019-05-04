@@ -31,10 +31,12 @@ class dialogflow {
         this.intentIdMap = {};
         this.dataMap = {};
         this.outputContextMap = {};
+        this.ymlScriptMap = {};
 
         Object.keys(config.projects).map(id => {
             this.initializeDataMap(id);
             this.initializeOutputContextMap(id);
+            this.initializeYmlScriptMap(id);
             this.initializeIntentMapIds(id);
         })
     }
@@ -43,6 +45,9 @@ class dialogflow {
     }
     initializeOutputContextMap(projectId) {
         this.outputContextMap[projectId] = {};
+    }
+    initializeYmlScriptMap(projectId) {
+        this.ymlScriptMap[projectId] = {};
     }
     initializeIntentMapIds(projectId) {
         const map = config.projects[projectId].intents;
@@ -54,7 +59,15 @@ class dialogflow {
         });
         this.intentIdMap[projectId][config.projects[projectId].fallback] = this.generateIdString();
     }
-
+    addPostYml(projectId, conversationId, postYml) {
+        if (typeof this.ymlScriptMap[projectId][conversationId]) {
+            this.ymlScriptMap[projectId][conversationId] = [];
+        }
+        this.ymlScriptMap[projectId][conversationId].push(postYml);
+    }
+    getConversationYml(projectId, conversationId) {
+        return this.ymlScriptMap[projectId][conversationId];
+    }
     getSessionId(projectId, conversationId) {
         return "projects/" + projectId + "/agent/sessions/" + conversationId;
     }
@@ -175,11 +188,13 @@ class dialogflow {
             const deletableConversatonId = this.sessionQueue[marker];
             if (typeof deletableConversatonId === 'string') {
                 delete this.outputContextMap[projectId][deletableConversatonId]
+                delete this.ymlScriptMap[projectId][deletableConversatonId]
             }
             this.sessionQueue[marker] = conversationId;
             this.sessionQueueMarker = marker < (this.sessionQueue.length - 1) ?
                 marker + 1 : 0;
         }
+
         const outputContexts = this.outputContextMap[projectId][conversationId]
             .map(context => {
                 return {
