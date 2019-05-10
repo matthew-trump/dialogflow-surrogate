@@ -25,7 +25,7 @@ app.use("/api/text-to-speech",
 const PORT = process.env.PORT || 8080;
 
 app.listen(PORT, () => {
-    console.log(`Dialogflow Surrogate App listening on port ${PORT}`);
+    console.log(`Dialogflow Emulator App listening on port ${PORT}`);
     console.log(`ENVIRONMENT ${process.env.ENVIRONMENT}`)
     console.log(`DEFAULT_TARGET ${process.env.DEFAULT_TARGET}`)
     console.log('Press Ctrl+C to quit.');
