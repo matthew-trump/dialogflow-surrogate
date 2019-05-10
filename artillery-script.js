@@ -3,6 +3,7 @@ const escapeDoubleQuotes = function (str) {
 }
 
 const getPostYml = (postBody) => {
+    let yml;
     yml = yml
         + "      - post:\n"
         + "         url: \"${url}\"\n"
@@ -78,11 +79,11 @@ const getPostYml = (postBody) => {
 
     })
     const user = postBody.originalDetectIntentRequest.payload.user;
-
+    console.log("USER", user);
 
     yml = yml
         + "               user:\n"
-        + "                 userStorage: \"" + escapeDoubleQuotes(user.userStorage) + "\"\n"
+        //+ "                 userStorage: \"" + escapeDoubleQuotes(user.userStorage) + "\"\n"
         + "                 lastSeen: \"" + user.lastSeen + "\"\n"
         + "                 locale: \"" + user.locale + "\"\n"
         + "                 userId: \"" + user.userId + "\"\n";

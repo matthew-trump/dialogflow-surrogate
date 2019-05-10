@@ -3,6 +3,7 @@ const router = express.Router();
 const config = require("./config");
 const dialogflow = require("./dialogflow");
 const httpBackend = require('./http-backend');
+const artilleryScript = require('./artillery-script');
 
 const DEBUG = process.env.DEBUG;
 const DEBUG_REQUESTS = DEBUG || process.env.DEBUG_REQUESTS;
@@ -35,8 +36,8 @@ router.post('/dialogflow', function (req, res) {
     }
     const intent = dialogflow.getIntent(projectId, conversationId, assistantRequest, options.noMap);
     const fulfillmenRequest = dialogflow.getFulfillmentRequest(projectId, assistantRequest, intent, options);
-    const postYml = artilleryScript.getPostYml(fulfillmenRequest);
-    dialogflow.ymlScriptMap[projectId][conversationId].push(postYml);
+    dialogflow.addPostYml(projectId, conversationId, artilleryScript.getPostYml(fulfillmenRequest))
+
 
     if (DEBUG_REQUESTS) console.log("");
     if (DEBUG_REQUESTS) console.log("=============");

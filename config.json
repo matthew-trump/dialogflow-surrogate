@@ -1,5 +1,5 @@
 {
-    "defaultTarget": "staging",
+    "defaultTarget": "production",
     "defaultProject": "quizzes",
     "targets": {
         "local": {
@@ -19,10 +19,10 @@
             ]
         },
         "production": {
-            "url": "http://localhost:8084",
+            "url": "http://localhost:8085",
             "secretKey": "SECRET_KEY_PRODUCTION",
             "projects": [
-                "trivia_bank",
+                "quizzes",
                 "cow"
             ]
         }
